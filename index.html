@@ -1,27 +1,168 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport"
-
         content="width=device-width, initial-scale=1">
+  <title>My Calendar</title>
+  <style>
+    * { box-sizing: border-box; }
 
-  <title>나의 첫 웹사이트</title>
+    body {
+      margin: 0;
+      background: #f4f6fb;
+      font-family: -apple-system, sans-serif;
+      color: #202437;
+    }
 
+    .app {
+      max-width: 480px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    h1 { font-size: 27px; }
+
+    .calendar {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px #00000008;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h2 { font-size: 19px; }
+
+    button {
+      border: none;
+      background: #eef0ff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      gap: 5px;
+    }
+
+    .weekday {
+      color: #888;
+      font-size: 13px;
+      padding: 12px 0;
+    }
+
+    .day {
+      padding: 12px 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .day.selected {
+      background: #5755e7;
+      color: white;
+    }
+
+    .day.today {
+      outline: 1px solid #5755e7;
+    }
+
+    #selectedDate {
+      margin-top: 22px;
+      font-weight: 600;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="app">
+    <h1>My Calendar</h1>
 
-  <h1>안녕하세요!</h1>
+    <div class="calendar">
+      <div class="header">
+        <button onclick="changeMonth(-1)">❮</button>
+        <h2 id="monthTitle"></h2>
+        <button onclick="changeMonth(1)">❯</button>
+      </div>
 
-  <p>아이폰으로 만든 첫 웹사이트입니다.</p>
+      <div class="grid" id="calendarGrid"></div>
+    </div>
 
-  <button onclick="alert('성공!')">
+    <p id="selectedDate">날짜를 선택하세요.</p>
+  </div>
 
-    클릭해 보세요
+  <script>
+    let current = new Date();
+    let selected = null;
 
-  </button>
+    function renderCalendar() {
+      const year = current.getFullYear();
+      const month = current.getMonth();
 
+      document.getElementById("monthTitle")
+        .textContent = `${year}년 ${month + 1}월`;
+
+      const grid = document.getElementById("calendarGrid");
+      grid.innerHTML = "";
+
+      ["일","월","화","수","목","금","토"]
+        .forEach(day => {
+          const el = document.createElement("div");
+          el.className = "weekday";
+          el.textContent = day;
+          grid.appendChild(el);
+        });
+
+      const first = new Date(year, month, 1).getDay();
+      const total = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 0; i < first; i++) {
+        grid.appendChild(document.createElement("div"));
+      }
+
+      for (let day = 1; day <= total; day++) {
+        const el = document.createElement("div");
+        el.className = "day";
+        el.textContent = day;
+
+        const date = `${year}-${String(month + 1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+
+        const today = new Date();
+        if (today.getFullYear() === year &&
+            today.getMonth() === month &&
+            today.getDate() === day) {
+          el.classList.add("today");
+        }
+
+        if (selected === date) {
+          el.classList.add("selected");
+        }
+
+        el.onclick = () => {
+          selected = date;
+          document.getElementById("selectedDate")
+            .textContent = `${date} 일정`;
+          renderCalendar();
+        };
+
+        grid.appendChild(el);
+      }
+    }
+
+    function changeMonth(amount) {
+      current.setDate(1);
+      current.setMonth(current.getMonth() + amount);
+      renderCalendar();
+    }
+
+    renderCalendar();
+  </script>
 </body>
-
 </html>
