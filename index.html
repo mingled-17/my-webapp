@@ -58,7 +58,9 @@
     .ghost-btn:hover { border-color: #d0caed; color: #5c4bce; }
     .nav-btn { width: 37px; padding: 8px; }
     .top-actions .primary-btn { min-height: 38px; padding: 9px 14px; }
-    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+    /* 상단에 오늘의 일정, 아래에 월간 달력을 배치 */
+    .workspace { display: flex; flex-direction: column; gap: 19px; align-items: stretch; }
+    .workspace > .panel { width: 100%; }
     .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
     .calendar-head { padding: 24px 26px 20px; display: flex; align-items: center; justify-content: space-between; }
     .calendar-head h2 { font-size: 21px; letter-spacing: -.7px; margin: 0; }
@@ -85,12 +87,18 @@
     .event-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .day-more { font-size: 10px; color: #8e93a5; padding-left: 4px; }
     .calendar-foot { padding: 15px 20px; font-size: 11px; color: #a3a7b5; }
-    .agenda { padding: 23px 19px; }
+    .agenda { padding: 25px 26px 22px; }
+    .agenda-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .agenda-title-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .today-label { background: var(--primary-soft); color: #6656dc; font-size: 11px; font-weight: 800; padding: 5px 8px; border-radius: 7px; }
+    .agenda-add { flex: none; }
+    .agenda-meta > span { display: inline-flex; align-items: center; gap: 4px; }
+    .agenda-meta .icon { width: 13px; height: 13px; }
     .agenda-kicker { font-size: 11px; font-weight: 800; color: var(--primary); letter-spacing: .8px; }
     .agenda h2 { font-size: 20px; line-height: 1.3; letter-spacing: -.6px; margin: 9px 0 7px; }
     .agenda-count { color: var(--muted); font-size: 12px; }
-    .agenda-divider { height: 1px; background: var(--line); margin: 20px 0; }
-    .agenda-list { display: grid; gap: 11px; }
+    .agenda-divider { height: 1px; background: var(--line); margin: 19px 0; }
+    .agenda-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 11px; }
     .agenda-event { border: 1px solid var(--line); border-left: 3px solid var(--event-color); border-radius: 10px; padding: 12px 11px 11px; }
     .agenda-event-top { display: flex; align-items: flex-start; gap: 6px; justify-content: space-between; }
     .agenda-event h3 { margin: 0; font-size: 13px; line-height: 1.5; word-break: break-word; }
@@ -99,7 +107,7 @@
     .pill { font-size: 10px; color: var(--event-color); background: color-mix(in srgb, var(--event-color), white 91%); border-radius: 5px; padding: 3px 6px; }
     .agenda-tools { display: flex; flex: none; gap: 2px; }
     .agenda-tools button { padding: 3px; }
-    .empty { text-align: center; padding: 31px 9px; color: #9a9fb0; }
+    .empty { text-align: center; padding: 22px 9px; color: #9a9fb0; grid-column: 1 / -1; }
     .empty-icon { width: 44px; height: 44px; margin: 0 auto 14px; display: grid; place-items: center; border-radius: 14px; background: #f2f0ff; color: var(--primary); }
     .empty-icon .icon { width: 22px; height: 22px; }
     .empty strong { color: #62687c; display: block; font-size: 13px; }
@@ -114,13 +122,18 @@
     .field input:focus, .field select:focus, .field textarea:focus { border-color: #968af6; }
     .field textarea { min-height: 83px; resize: vertical; }
     .field input[type=color] { width: 60px; height: 38px; padding: 3px; border: 1px solid #dfe2ec; background: white; border-radius: 9px; cursor: pointer; }
+    .all-day-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border-radius: 11px; background: #f8f8fd; border: 1px solid var(--line); cursor: pointer; }
+    .all-day-row strong { display: block; color: #44495e; font-size: 13px; }
+    .all-day-row small { display: block; margin-top: 4px; color: #9398a9; font-size: 11px; }
+    .all-day-row input[type=checkbox] { width: 19px; height: 19px; accent-color: var(--primary); cursor: pointer; flex: none; }
+    .field-hint { color: #9398a9; font-size: 11px; margin: 6px 1px 0; line-height: 1.5; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
     .modal-footer { display: flex; align-items: center; gap: 9px; justify-content: flex-end; padding-top: 7px; }
     .danger-btn { margin-right: auto; border: 0; background: transparent; color: #df5f72; font-weight: 700; padding: 9px 2px; }
     .danger-btn:hover { color: #bf3b51; }
     .toast { position: fixed; right: 22px; bottom: 22px; z-index: 100; background: #292e46; color: #fff; padding: 12px 17px; border-radius: 11px; box-shadow: 0 8px 30px #161b2e25; font-size: 12px; }
     .mobile-menu, .sidebar-backdrop { display: none; }
-    @media (max-width: 1190px) { .workspace { grid-template-columns: minmax(0,1fr); } .agenda { display: block; } .agenda-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } }
+
     @media (max-width: 850px) {
       .sidebar { position: fixed; inset: 0 auto 0 0; height: 100dvh; transform: translateX(-100%); transition: transform .22s; box-shadow: 15px 0 50px #14162b14; }
       .sidebar.open { transform: translateX(0); }
@@ -132,10 +145,16 @@
     }
     @media (max-width: 570px) {
       .topbar { align-items: flex-start; }
-      .subtext, .top-actions .today-btn, .desktop-add-text { display: none; }
+      .subtext, .desktop-add-text { display: none; }
       .top-actions { gap: 5px; }
       .top-actions .primary-btn { width: 38px; padding: 8px; }
       .top-actions .nav-btn { width: 32px; }
+      .top-actions .today-btn { min-height: 38px; padding: 7px 9px; font-size: 12px; }
+      .agenda { padding: 20px 16px; }
+      .agenda-header { align-items: flex-start; }
+      .agenda-add { padding: 8px 9px; font-size: 11px; }
+      .agenda h2 { font-size: 19px; }
+      .agenda-list { grid-template-columns: 1fr; }
       .calendar-head { padding: 18px 13px 12px; }
       .calendar-head h2 { font-size: 18px; }
       .calendar-head p { display: none; }
@@ -192,23 +211,29 @@
         </div>
         <div class="top-actions">
           <button class="ghost-btn today-btn" id="todayBtn">오늘</button>
-          <button class="ghost-btn nav-btn" id="prevMonthBtn" aria-label="이전 달"><svg class="icon"><use href="#i-left"/></svg></button>
-          <button class="ghost-btn nav-btn" id="nextMonthBtn" aria-label="다음 달"><svg class="icon"><use href="#i-right"/></svg></button>
           <button class="primary-btn" id="addEventTop"><svg class="icon"><use href="#i-plus"/></svg><span class="desktop-add-text">일정 추가</span></button>
         </div>
       </header>
       <div class="workspace">
+        <!-- 첫 화면에서 오늘의 일정이 월간 달력보다 먼저 보입니다. -->
+        <section class="panel agenda" aria-label="선택한 날짜의 일정">
+          <div class="agenda-header">
+            <div>
+              <div class="agenda-kicker" id="agendaKicker">TODAY'S SCHEDULE</div>
+              <div class="agenda-title-line"><h2 id="selectedDateTitle"></h2><span class="today-label" id="todayLabel">오늘</span></div>
+              <div class="agenda-count" id="selectedDateCount"></div>
+            </div>
+            <button class="ghost-btn agenda-add" id="addEventDay"><svg class="icon"><use href="#i-plus"/></svg>이 날짜에 일정 추가</button>
+          </div>
+          <div class="agenda-divider"></div>
+          <div class="agenda-list" id="agendaList"></div>
+        </section>
         <section class="panel">
           <div class="calendar-head"><div><h2 id="monthTitle"></h2><p>날짜를 누르면 해당 날짜의 일정을 볼 수 있어요.</p></div><div class="month-nav"><button class="ghost-btn nav-btn" id="calendarPrev" aria-label="이전 달"><svg class="icon"><use href="#i-left"/></svg></button><button class="ghost-btn nav-btn" id="calendarNext" aria-label="다음 달"><svg class="icon"><use href="#i-right"/></svg></button></div></div>
           <div class="weekday-grid"><div class="weekday">일</div><div class="weekday">월</div><div class="weekday">화</div><div class="weekday">수</div><div class="weekday">목</div><div class="weekday">금</div><div class="weekday">토</div></div>
           <div id="monthGrid" class="month-grid"></div>
-          <div class="calendar-foot">캘린더 이름을 누르면 해당 캘린더의 카테고리를 관리할 수 있습니다.</div>
+          <div class="calendar-foot">캘린더 이름을 누르면 해당 캘린더의 카테고리를 관리할 수 있습니다. 여러 날에 걸친 일정은 해당 날짜 모두에 표시돼요.</div>
         </section>
-        <aside class="panel agenda" aria-label="선택한 날짜의 일정">
-          <div class="agenda-kicker">DAILY SCHEDULE</div><h2 id="selectedDateTitle"></h2><div class="agenda-count" id="selectedDateCount"></div>
-          <div class="agenda-divider"></div><div class="agenda-list" id="agendaList"></div>
-          <button class="ghost-btn wide" id="addEventDay" style="margin-top:18px"><svg class="icon"><use href="#i-plus"/></svg>이 날짜에 일정 추가</button>
-        </aside>
       </div>
     </main>
   </div>
@@ -265,8 +290,23 @@
     }
     const getCal = (id) => data.calendars.find((item) => item.id === id);
     const getCat = (id) => data.categories.find((item) => item.id === id);
-    const shownEvents = (date) => data.events.filter((item) => item.date === date && !data.hiddenCalendarIds.includes(item.calendarId))
-      .sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00") || a.title.localeCompare(b.title, "ko"));
+    // v1 저장 데이터(date/time)도 읽을 수 있게 호환 처리합니다.
+    const eventStart = (event) => event.startDate || event.date;
+    const eventEnd = (event) => event.endDate || event.startDate || event.date;
+    const isAllDay = (event) => event.allDay === undefined ? !event.time : event.allDay;
+    const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && dateKey(parseDate(value)) === value;
+    const briefDate = (key) => { const d = parseDate(key); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
+    function rangeLabel(event) {
+      const start = eventStart(event), end = eventEnd(event);
+      if (start === end) return briefDate(start);
+      const endYear = end.slice(0, 4) === start.slice(0, 4) ? "" : `${end.slice(0, 4)}년 `;
+      return `${briefDate(start)} ~ ${endYear}${briefDate(end)}`;
+    }
+    const shownEvents = (date) => data.events.filter((item) => {
+      const start = eventStart(item), end = eventEnd(item);
+      return start && end && start <= date && date <= end && !data.hiddenCalendarIds.includes(item.calendarId);
+    }).sort((a, b) => Number(isAllDay(b)) - Number(isAllDay(a))
+      || (a.time || "00:00").localeCompare(b.time || "00:00") || a.title.localeCompare(b.title, "ko"));
     const eventColor = (event) => color(getCat(event.categoryId)?.color || getCal(event.calendarId)?.color);
 
     function renderSidebar() {
@@ -299,7 +339,7 @@
         const key = dateKey(d);
         const outside = d.getMonth() !== viewMonth.getMonth();
         const events = shownEvents(key);
-        const eventTags = events.slice(0, 2).map((event) => `<button type="button" class="event-chip" style="--event-color:${eventColor(event)}" data-action="edit-event" data-id="${html(event.id)}" title="${html(event.title)}">
+        const eventTags = events.slice(0, 2).map((event) => `<button type="button" class="event-chip" style="--event-color:${eventColor(event)}" data-action="edit-event" data-id="${html(event.id)}" title="${html(event.title)} (${html(rangeLabel(event))})">
           <span class="event-dot"></span><span class="event-label">${html(event.title)}</span></button>`).join("");
         return `<div class="day ${outside ? "outside" : ""} ${key === selectedDate ? "selected" : ""} ${key === todayString ? "today" : ""}" data-action="select-day" data-date="${key}" role="button" tabindex="0" aria-label="${key}, 일정 ${events.length}개">
           <span class="day-num">${d.getDate()}</span><div class="day-events">${eventTags}${events.length > 2 ? `<span class="day-more">+${events.length - 2}개</span>` : ""}</div>
@@ -309,6 +349,9 @@
     }
     function renderAgenda() {
       const date = parseDate(selectedDate);
+      const isToday = selectedDate === dateKey(new Date());
+      $("#agendaKicker").textContent = isToday ? "TODAY'S SCHEDULE" : "DAILY SCHEDULE";
+      $("#todayLabel").hidden = !isToday;
       $("#selectedDateTitle").textContent = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", weekday: "long" }).format(date);
       const events = shownEvents(selectedDate);
       $("#selectedDateCount").textContent = `등록된 일정 ${events.length}개`;
@@ -321,7 +364,9 @@
             <button class="mini-btn" data-action="edit-event" data-id="${html(event.id)}" aria-label="일정 수정" title="수정">${icon("pencil")}</button>
             <button class="mini-btn" data-action="delete-event" data-id="${html(event.id)}" aria-label="일정 삭제" title="삭제">${icon("trash")}</button>
           </div></div>
-          <div class="agenda-meta"><span>${icon("clock")} ${html(event.time || "종일")}</span><span>${html(cal?.name || "캘린더")}</span>${cat ? `<span class="pill" style="--event-color:${accent}">${html(cat.name)}</span>` : ""}</div>
+          <div class="agenda-meta"><span>${icon("clock")} ${isAllDay(event) ? "하루 종일" : html(event.time || "시간 미설정")}</span>
+          ${eventStart(event) !== eventEnd(event) ? `<span>${icon("calendar")} ${html(rangeLabel(event))}</span>` : ""}
+          <span>${html(cal?.name || "캘린더")}</span>${cat ? `<span class="pill" style="--event-color:${accent}">${html(cat.name)}</span>` : ""}</div>
           ${event.description ? `<p class="agenda-note">${html(event.description)}</p>` : ""}
         </article>`;
       }).join("") : `<div class="empty"><div class="empty-icon">${icon("calendar")}</div><strong>아직 일정이 없어요</strong><p>이 날짜에 새로운 일정을<br>추가해 보세요.</p></div>`;
@@ -360,8 +405,12 @@
         const calendarId = event?.calendarId || activeCalendarId;
         title = event ? "일정 수정" : "새 일정 추가";
         fields = `<div class="field"><label for="eventTitle">일정 제목 *</label><input id="eventTitle" name="title" maxlength="80" required placeholder="예: 프로젝트 회의" value="${html(event?.title || "")}"></div>
-          <div class="field-row"><div class="field"><label for="eventDate">날짜 *</label><input id="eventDate" name="date" type="date" required value="${html(event?.date || selectedDate)}"></div>
-          <div class="field"><label for="eventTime">시간 (선택)</label><input id="eventTime" name="time" type="time" value="${html(event?.time || "")}"></div></div>
+          <div class="field-row">
+            <div class="field"><label for="eventStartDate">시작일 *</label><input id="eventStartDate" name="startDate" type="date" required value="${html(event ? eventStart(event) : selectedDate)}"></div>
+            <div class="field"><label for="eventEndDate">종료일 *</label><input id="eventEndDate" name="endDate" type="date" required min="${html(event ? eventStart(event) : selectedDate)}" value="${html(event ? eventEnd(event) : selectedDate)}"></div>
+          </div>
+          <div class="field"><label class="all-day-row" for="eventAllDay"><span><strong>하루 종일</strong><small>시간을 지정하지 않고 날짜 전체에 표시해요.</small></span><input id="eventAllDay" name="allDay" type="checkbox" ${!event || isAllDay(event) ? "checked" : ""}></label></div>
+          <div class="field" id="eventTimeField" ${!event || isAllDay(event) ? "hidden" : ""}><label for="eventTime">시작 시간 *</label><input id="eventTime" name="time" type="time" ${!event || isAllDay(event) ? "disabled" : "required"} value="${html(event?.time || "09:00")}"><p class="field-hint">시간 지정 일정도 시작일과 종료일 사이 모든 날짜에 표시돼요.</p></div>
           <div class="field-row"><div class="field"><label for="eventCalendar">캘린더 *</label><select id="eventCalendar" name="calendarId">${data.calendars.map((cal) => option(cal.id, cal.name, cal.id === calendarId)).join("")}</select></div>
           <div class="field"><label for="eventCategory">카테고리</label><select id="eventCategory" name="categoryId">${categoryOptions(calendarId, event?.categoryId)}</select></div></div>
           <div class="field"><label for="eventDescription">메모 (선택)</label><textarea id="eventDescription" name="description" maxlength="1000" placeholder="기억할 내용을 적어주세요">${html(event?.description || "")}</textarea></div>`;
@@ -383,6 +432,18 @@
       $("#modal input:not([type=color]):not([type=date]):not([type=time]):not([disabled])")?.focus();
       if (mode === "event") {
         $("#eventCalendar").addEventListener("change", (e) => { $("#eventCategory").innerHTML = categoryOptions(e.target.value); });
+        const start = $("#eventStartDate"), end = $("#eventEndDate"), allDay = $("#eventAllDay"), time = $("#eventTime");
+        start.addEventListener("change", () => {
+          end.min = start.value;
+          if (end.value < start.value) end.value = start.value;
+        });
+        const toggleTime = () => {
+          $("#eventTimeField").hidden = allDay.checked;
+          time.disabled = allDay.checked;
+          time.required = !allDay.checked;
+        };
+        allDay.addEventListener("change", toggleTime);
+        toggleTime();
       }
       $("#editorForm").addEventListener("submit", saveEditor);
     }
@@ -393,11 +454,18 @@
       if (mode === "event") {
         const title = values.title.trim();
         if (!title || !getCal(values.calendarId)) return;
-        const entry = { id: id || uid(), title, date: values.date, time: values.time, calendarId: values.calendarId,
+        const startDate = values.startDate, endDate = values.endDate;
+        if (!isValidDate(startDate) || !isValidDate(endDate) || endDate < startDate) {
+          return showToast("종료일은 시작일과 같거나 이후여야 해요.");
+        }
+        const allDay = values.allDay === "on";
+        if (!allDay && !values.time) return showToast("시작 시간을 선택해 주세요.");
+        const entry = { id: id || uid(), title, date: startDate, startDate, endDate,
+          allDay, time: allDay ? "" : values.time, calendarId: values.calendarId,
           categoryId: getCat(values.categoryId)?.calendarId === values.calendarId ? values.categoryId : "", description: values.description.trim() };
         if (id) data.events = data.events.map((item) => item.id === id ? entry : item);
         else data.events.push(entry);
-        selectDate(entry.date);
+        selectDate(entry.startDate);
       } else if (mode === "calendar") {
         const name = values.name.trim(); if (!name) return;
         if (data.calendars.some((cal) => cal.name === name && cal.id !== id)) return showToast("이미 같은 이름의 캘린더가 있어요.");
@@ -455,8 +523,8 @@
     ["#addEventSidebar", "#addEventTop", "#addEventDay"].forEach((s) => $(s).addEventListener("click", () => openEditor("event")));
     $("#addCalendarBtn").addEventListener("click", () => openEditor("calendar"));
     $("#addCategoryBtn").addEventListener("click", () => openEditor("category"));
-    ["#prevMonthBtn", "#calendarPrev"].forEach((s) => $(s).addEventListener("click", () => changeMonth(-1)));
-    ["#nextMonthBtn", "#calendarNext"].forEach((s) => $(s).addEventListener("click", () => changeMonth(1)));
+    $("#calendarPrev").addEventListener("click", () => changeMonth(-1));
+    $("#calendarNext").addEventListener("click", () => changeMonth(1));
     $("#todayBtn").addEventListener("click", () => selectDate(dateKey(new Date())));
     $("#menuBtn").addEventListener("click", () => { $("#sidebar").classList.add("open"); $("#sidebarBackdrop").hidden = false; });
     $("#sidebarBackdrop").addEventListener("click", closeMenu);
