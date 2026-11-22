@@ -1,184 +1,468 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1">
-  <title>My Calendar</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f6f7fb" />
+  <title>S-Calender | 나만의 일정 관리</title>
   <style>
+    :root {
+      --bg: #f6f7fb; --surface: #fff; --text: #202337; --muted: #8b90a2;
+      --line: #e9ebf2; --primary: #7365ed; --primary-soft: #f0edff;
+      --shadow: 0 12px 36px rgba(34, 40, 71, .045);
+    }
     * { box-sizing: border-box; }
-
-    
-/* 빠른 연속 터치 시 확대 방지 */
-button {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* 달력 날짜 선택 시에도 확대 방지 */
-.day {
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-
-    body {
-      margin: 0;
-      background: #f4f6fb;
-      font-family: -apple-system, sans-serif;
-      color: #202437;
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; font-size: 14px; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #c8c1ff; outline-offset: 2px; }
+    [hidden] { display: none !important; }
+    .icon { width: 17px; height: 17px; stroke: currentColor; stroke-width: 1.9; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .app { min-height: 100vh; display: flex; }
+    .sidebar { width: 257px; background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 27px 17px 19px; flex: none; z-index: 30; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 12px; margin-bottom: 34px; }
+    .brand-mark { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--primary); color: #fff; box-shadow: 0 6px 14px #7365ed36; }
+    .brand-mark .icon { width: 21px; height: 21px; }
+    .brand strong { font-size: 18px; letter-spacing: -.6px; }
+    .brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+    .primary-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 700; padding: 12px 16px; transition: .15s; }
+    .primary-btn:hover { background: #5e51d6; transform: translateY(-1px); }
+    .wide { width: 100%; }
+    .side-section { margin-top: 33px; }
+    .side-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-bottom: 12px; }
+    .side-heading span { font-size: 12px; font-weight: 800; letter-spacing: .1px; color: #656a7f; }
+    .mini-btn { border: 0; background: transparent; color: #8990a4; padding: 4px; display: grid; place-items: center; border-radius: 7px; }
+    .mini-btn:hover { background: #f1f2f7; color: var(--text); }
+    .side-list { display: grid; gap: 3px; }
+    .side-item { min-height: 41px; display: flex; align-items: center; gap: 5px; border-radius: 9px; padding: 2px 4px 2px 9px; }
+    .side-item.active { background: #f3f1ff; }
+    .side-item:hover { background: #f7f7fb; }
+    .side-item.active:hover { background: #f3f1ff; }
+    .side-item-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; background: none; border: 0; text-align: left; padding: 7px 0; color: #464a60; font-weight: 600; }
+    .side-item.active .side-item-main { color: #5c4bce; }
+    .side-item-main span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .color-dot { width: 11px; height: 11px; border-radius: 4px; flex: none; background: var(--dot); }
+    .side-count { color: #afb3bf; font-size: 11px; margin-left: auto; }
+    .side-action { border: 0; background: transparent; color: #a1a6b7; padding: 4px; border-radius: 6px; display: grid; place-items: center; }
+    .side-action .icon { width: 14px; height: 14px; }
+    .side-action:hover { color: #5b50be; background: #e9e5ff; }
+    .side-footer { margin-top: auto; padding: 17px 12px 0; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: flex-start; color: #9ba0ae; font-size: 11px; line-height: 1.6; }
+    .side-footer .icon { width: 15px; height: 15px; margin-top: 1px; }
+    .main { min-width: 0; flex: 1; padding: 33px clamp(16px, 3.1vw, 48px); max-width: 1760px; margin: 0 auto; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+    .eyebrow { color: var(--primary); font-size: 12px; letter-spacing: 1.3px; font-weight: 850; margin: 0 0 7px; }
+    h1 { margin: 0; font-size: clamp(23px, 2.1vw, 29px); letter-spacing: -1.3px; }
+    .subtext { color: var(--muted); margin: 8px 0 0; font-size: 13px; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .ghost-btn { border: 1px solid var(--line); background: #fff; border-radius: 10px; min-height: 38px; padding: 8px 12px; font-weight: 650; color: #555b6f; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .ghost-btn:hover { border-color: #d0caed; color: #5c4bce; }
+    .nav-btn { width: 37px; padding: 8px; }
+    .top-actions .primary-btn { min-height: 38px; padding: 9px 14px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+    .calendar-head { padding: 24px 26px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .calendar-head h2 { font-size: 21px; letter-spacing: -.7px; margin: 0; }
+    .calendar-head p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+    .calendar-head .month-nav { display: flex; align-items: center; gap: 6px; }
+    .weekday-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 12px; }
+    .weekday { text-align: center; padding: 13px 0 14px; color: #8e92a2; font-size: 12px; font-weight: 750; }
+    .weekday:first-child { color: #ed8596; }
+    .weekday:last-child { color: #718ed3; }
+    .month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+    .day { position: relative; min-width: 0; min-height: 114px; border: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 7px 8px; background: white; text-align: left; display: flex; flex-direction: column; gap: 7px; align-items: stretch; }
+    .day:nth-child(7n) { border-right: 0; }
+    .day:hover { background: #faf9ff; }
+    .day.selected { background: #f6f4ff; box-shadow: inset 0 0 0 1px #d8d2ff; }
+    .day.outside { background: #fcfcfe; }
+    .day.outside .day-num { color: #c7cbd4; }
+    .day-num { width: 25px; height: 25px; display: grid; place-items: center; color: #53596b; font-size: 12px; font-weight: 750; border-radius: 50%; }
+    .day.today .day-num { background: var(--primary); color: white; }
+    .day:nth-child(7n + 1):not(.today) .day-num { color: #e47f93; }
+    .day-events { display: grid; gap: 4px; align-content: start; width: 100%; }
+    .event-chip { min-width: 0; display: flex; align-items: center; gap: 5px; background: color-mix(in srgb, var(--event-color), white 89%); border: 0; color: #4c5061; font-size: 10.5px; font-weight: 650; border-radius: 5px; padding: 5px 6px; text-align: left; overflow: hidden; }
+    .event-chip:hover { background: color-mix(in srgb, var(--event-color), white 77%); }
+    .event-dot { display: block; flex: none; width: 6px; height: 6px; border-radius: 2px; background: var(--event-color); }
+    .event-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .day-more { font-size: 10px; color: #8e93a5; padding-left: 4px; }
+    .calendar-foot { padding: 15px 20px; font-size: 11px; color: #a3a7b5; }
+    .agenda { padding: 23px 19px; }
+    .agenda-kicker { font-size: 11px; font-weight: 800; color: var(--primary); letter-spacing: .8px; }
+    .agenda h2 { font-size: 20px; line-height: 1.3; letter-spacing: -.6px; margin: 9px 0 7px; }
+    .agenda-count { color: var(--muted); font-size: 12px; }
+    .agenda-divider { height: 1px; background: var(--line); margin: 20px 0; }
+    .agenda-list { display: grid; gap: 11px; }
+    .agenda-event { border: 1px solid var(--line); border-left: 3px solid var(--event-color); border-radius: 10px; padding: 12px 11px 11px; }
+    .agenda-event-top { display: flex; align-items: flex-start; gap: 6px; justify-content: space-between; }
+    .agenda-event h3 { margin: 0; font-size: 13px; line-height: 1.5; word-break: break-word; }
+    .agenda-meta { margin-top: 7px; color: #9096a5; display: flex; flex-wrap: wrap; gap: 8px; font-size: 11px; }
+    .agenda-note { margin: 9px 0 0; font-size: 12px; color: #72788a; white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+    .pill { font-size: 10px; color: var(--event-color); background: color-mix(in srgb, var(--event-color), white 91%); border-radius: 5px; padding: 3px 6px; }
+    .agenda-tools { display: flex; flex: none; gap: 2px; }
+    .agenda-tools button { padding: 3px; }
+    .empty { text-align: center; padding: 31px 9px; color: #9a9fb0; }
+    .empty-icon { width: 44px; height: 44px; margin: 0 auto 14px; display: grid; place-items: center; border-radius: 14px; background: #f2f0ff; color: var(--primary); }
+    .empty-icon .icon { width: 22px; height: 22px; }
+    .empty strong { color: #62687c; display: block; font-size: 13px; }
+    .empty p { font-size: 12px; line-height: 1.6; margin: 7px 0 18px; }
+    .modal-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; background: rgba(25, 30, 55, .46); padding: 16px; }
+    .modal { width: min(100%, 455px); max-height: min(90vh, 800px); overflow-y: auto; background: #fff; border-radius: 20px; box-shadow: 0 25px 70px #11162930; padding: 26px; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-header h2 { font-size: 20px; letter-spacing: -.5px; margin: 0; }
+    .field { margin-bottom: 17px; }
+    .field label { display: block; font-weight: 750; font-size: 12px; color: #565c70; margin-bottom: 8px; }
+    .field input:not([type=color]), .field select, .field textarea { width: 100%; border: 1px solid #dfe2ec; background: #fff; border-radius: 10px; padding: 11px 12px; color: var(--text); outline: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #968af6; }
+    .field textarea { min-height: 83px; resize: vertical; }
+    .field input[type=color] { width: 60px; height: 38px; padding: 3px; border: 1px solid #dfe2ec; background: white; border-radius: 9px; cursor: pointer; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .modal-footer { display: flex; align-items: center; gap: 9px; justify-content: flex-end; padding-top: 7px; }
+    .danger-btn { margin-right: auto; border: 0; background: transparent; color: #df5f72; font-weight: 700; padding: 9px 2px; }
+    .danger-btn:hover { color: #bf3b51; }
+    .toast { position: fixed; right: 22px; bottom: 22px; z-index: 100; background: #292e46; color: #fff; padding: 12px 17px; border-radius: 11px; box-shadow: 0 8px 30px #161b2e25; font-size: 12px; }
+    .mobile-menu, .sidebar-backdrop { display: none; }
+    @media (max-width: 1190px) { .workspace { grid-template-columns: minmax(0,1fr); } .agenda { display: block; } .agenda-list { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } }
+    @media (max-width: 850px) {
+      .sidebar { position: fixed; inset: 0 auto 0 0; height: 100dvh; transform: translateX(-100%); transition: transform .22s; box-shadow: 15px 0 50px #14162b14; }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-backdrop { display: block; position: fixed; z-index: 20; inset: 0; background: #15192860; }
+      .mobile-menu { display: grid; place-items: center; }
+      .main { padding: 23px 16px; }
+      .topbar { gap: 12px; }
+      .top-left { display: flex; align-items: flex-start; gap: 10px; }
     }
-
-    .app {
-      max-width: 480px;
-      margin: 30px auto;
-      padding: 20px;
-    }
-
-    h1 { font-size: 27px; }
-
-    .calendar {
-      background: white;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 4px 20px #00000008;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .header h2 { font-size: 19px; }
-
-    button {
-      border: none;
-      background: #eef0ff;
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      text-align: center;
-      gap: 5px;
-    }
-
-    .weekday {
-      color: #888;
-      font-size: 13px;
-      padding: 12px 0;
-    }
-
-    .day {
-      padding: 12px 0;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-
-    .day.selected {
-      background: #5755e7;
-      color: white;
-    }
-
-    .day.today {
-      outline: 1px solid #5755e7;
-    }
-
-    #selectedDate {
-      margin-top: 22px;
-      font-weight: 600;
+    @media (max-width: 570px) {
+      .topbar { align-items: flex-start; }
+      .subtext, .top-actions .today-btn, .desktop-add-text { display: none; }
+      .top-actions { gap: 5px; }
+      .top-actions .primary-btn { width: 38px; padding: 8px; }
+      .top-actions .nav-btn { width: 32px; }
+      .calendar-head { padding: 18px 13px 12px; }
+      .calendar-head h2 { font-size: 18px; }
+      .calendar-head p { display: none; }
+      .weekday-grid { padding: 0 3px; }
+      .day { min-height: 77px; padding: 6px 4px; gap: 5px; }
+      .day-events { display: flex; gap: 4px; flex-wrap: wrap; }
+      .event-chip { padding: 0; width: 8px; height: 8px; border-radius: 50%; }
+      .event-dot { width: 8px; height: 8px; border-radius: 50%; }
+      .event-label { display: none; }
+      .day-more { padding-left: 0; font-size: 9px; }
+      .calendar-foot { padding: 12px; }
+      .modal { padding: 21px 17px; }
+      .field-row { grid-template-columns: 1fr; gap: 0; }
     }
   </style>
 </head>
 <body>
+  <!-- 아이콘: 외부 라이브러리 없이 작동합니다. -->
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18M8 14h3v3H8z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="m15 5 4 4M4 20l4.5-1 11-11a2.8 2.8 0 0 0-4-4l-11 11L4 20Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="m3 3 18 18M10 5.2A10.8 10.8 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.4 4.1M6.2 6.3C3.6 8.1 2 12 2 12s4 7 10 7c1.5 0 3-.5 4.2-1.2"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  </svg>
+
   <div class="app">
-    <h1>My Calendar</h1>
-
-    <div class="calendar">
-      <div class="header">
-        <button onclick="changeMonth(-1)">❮</button>
-        <h2 id="monthTitle"></h2>
-        <button onclick="changeMonth(1)">❯</button>
+    <div id="sidebarBackdrop" class="sidebar-backdrop" hidden></div>
+    <aside id="sidebar" class="sidebar">
+      <div class="brand"><div class="brand-mark"><svg class="icon"><use href="#i-calendar"/></svg></div><div><strong>S-Calender</strong><small>My personal space</small></div></div>
+      <button class="primary-btn wide" id="addEventSidebar"><svg class="icon"><use href="#i-plus"/></svg>새 일정 만들기</button>
+      <section class="side-section">
+        <div class="side-heading"><span>내 캘린더</span><button class="mini-btn" id="addCalendarBtn" title="캘린더 만들기" aria-label="캘린더 만들기"><svg class="icon"><use href="#i-plus"/></svg></button></div>
+        <div class="side-list" id="calendarList"></div>
+      </section>
+      <section class="side-section">
+        <div class="side-heading"><span id="categoryHeading">카테고리</span><button class="mini-btn" id="addCategoryBtn" title="카테고리 만들기" aria-label="카테고리 만들기"><svg class="icon"><use href="#i-plus"/></svg></button></div>
+        <div class="side-list" id="categoryList"></div>
+      </section>
+      <div class="side-footer"><svg class="icon"><use href="#i-info"/></svg><span>일정은 현재 브라우저에 자동 저장돼요.<br>다른 기기와는 아직 동기화되지 않아요.</span></div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="ghost-btn nav-btn mobile-menu" id="menuBtn" aria-label="메뉴 열기"><svg class="icon"><use href="#i-menu"/></svg></button>
+          <div><p class="eyebrow">MY WORKSPACE</p><h1>나의 일정 관리</h1><p class="subtext">오늘의 계획을 한눈에, 더 가볍고 간편하게.</p></div>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-btn today-btn" id="todayBtn">오늘</button>
+          <button class="ghost-btn nav-btn" id="prevMonthBtn" aria-label="이전 달"><svg class="icon"><use href="#i-left"/></svg></button>
+          <button class="ghost-btn nav-btn" id="nextMonthBtn" aria-label="다음 달"><svg class="icon"><use href="#i-right"/></svg></button>
+          <button class="primary-btn" id="addEventTop"><svg class="icon"><use href="#i-plus"/></svg><span class="desktop-add-text">일정 추가</span></button>
+        </div>
+      </header>
+      <div class="workspace">
+        <section class="panel">
+          <div class="calendar-head"><div><h2 id="monthTitle"></h2><p>날짜를 누르면 해당 날짜의 일정을 볼 수 있어요.</p></div><div class="month-nav"><button class="ghost-btn nav-btn" id="calendarPrev" aria-label="이전 달"><svg class="icon"><use href="#i-left"/></svg></button><button class="ghost-btn nav-btn" id="calendarNext" aria-label="다음 달"><svg class="icon"><use href="#i-right"/></svg></button></div></div>
+          <div class="weekday-grid"><div class="weekday">일</div><div class="weekday">월</div><div class="weekday">화</div><div class="weekday">수</div><div class="weekday">목</div><div class="weekday">금</div><div class="weekday">토</div></div>
+          <div id="monthGrid" class="month-grid"></div>
+          <div class="calendar-foot">캘린더 이름을 누르면 해당 캘린더의 카테고리를 관리할 수 있습니다.</div>
+        </section>
+        <aside class="panel agenda" aria-label="선택한 날짜의 일정">
+          <div class="agenda-kicker">DAILY SCHEDULE</div><h2 id="selectedDateTitle"></h2><div class="agenda-count" id="selectedDateCount"></div>
+          <div class="agenda-divider"></div><div class="agenda-list" id="agendaList"></div>
+          <button class="ghost-btn wide" id="addEventDay" style="margin-top:18px"><svg class="icon"><use href="#i-plus"/></svg>이 날짜에 일정 추가</button>
+        </aside>
       </div>
-
-      <div class="grid" id="calendarGrid"></div>
-    </div>
-
-    <p id="selectedDate">날짜를 선택하세요.</p>
+    </main>
   </div>
+  <div class="modal-overlay" id="modalOverlay" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+  <div class="toast" id="toast" role="status" hidden></div>
 
   <script>
-    let current = new Date();
-    let selected = null;
+    const STORAGE_KEY = "s-calender-data-v1";
+    const COLORS = ["#7365ed", "#28a99c", "#f39a55", "#e87599", "#5b8de3", "#ae80cd"];
+    const $ = (selector) => document.querySelector(selector);
+    const icon = (name) => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+    const uid = () => typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const html = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    const color = (value) => /^#[0-9a-fA-F]{6}$/.test(value || "") ? value : COLORS[0];
+    const dateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const parseDate = (s) => new Date(`${s}T12:00:00`);
+    const today = new Date();
+    let selectedDate = dateKey(today);
+    let viewMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let activeCalendarId = "";
+    let toastTimer;
 
-    function renderCalendar() {
-      const year = current.getFullYear();
-      const month = current.getMonth();
-
-      document.getElementById("monthTitle")
-        .textContent = `${year}년 ${month + 1}월`;
-
-      const grid = document.getElementById("calendarGrid");
-      grid.innerHTML = "";
-
-      ["일","월","화","수","목","금","토"]
-        .forEach(day => {
-          const el = document.createElement("div");
-          el.className = "weekday";
-          el.textContent = day;
-          grid.appendChild(el);
-        });
-
-      const first = new Date(year, month, 1).getDay();
-      const total = new Date(year, month + 1, 0).getDate();
-
-      for (let i = 0; i < first; i++) {
-        grid.appendChild(document.createElement("div"));
-      }
-
-      for (let day = 1; day <= total; day++) {
-        const el = document.createElement("div");
-        el.className = "day";
-        el.textContent = day;
-
-        const date = `${year}-${String(month + 1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-
-        const today = new Date();
-        if (today.getFullYear() === year &&
-            today.getMonth() === month &&
-            today.getDate() === day) {
-          el.classList.add("today");
-        }
-
-        if (selected === date) {
-          el.classList.add("selected");
-        }
-
-        el.onclick = () => {
-          selected = date;
-          document.getElementById("selectedDate")
-            .textContent = `${date} 일정`;
-          renderCalendar();
-        };
-
-        grid.appendChild(el);
-      }
+    function defaults() {
+      return {
+        calendars: [{ id: "personal", name: "개인", color: COLORS[0] }, { id: "study", name: "공부 · 작업", color: COLORS[1] }],
+        categories: [
+          { id: "daily", calendarId: "personal", name: "일상", color: COLORS[0] },
+          { id: "meet", calendarId: "personal", name: "약속", color: COLORS[3] },
+          { id: "task", calendarId: "study", name: "할 일", color: COLORS[1] },
+          { id: "deadline", calendarId: "study", name: "마감", color: COLORS[2] }
+        ],
+        events: [], hiddenCalendarIds: []
+      };
     }
-
-    function changeMonth(amount) {
-      current.setDate(1);
-      current.setMonth(current.getMonth() + amount);
-      renderCalendar();
+    function loadData() {
+      try {
+        const value = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (value && Array.isArray(value.calendars) && value.calendars.length && Array.isArray(value.categories) && Array.isArray(value.events)) {
+          return { ...value, hiddenCalendarIds: Array.isArray(value.hiddenCalendarIds) ? value.hiddenCalendarIds : [] };
+        }
+      } catch (e) { console.warn("저장된 데이터를 읽을 수 없습니다.", e); }
+      return defaults();
     }
+    let data = loadData();
+    activeCalendarId = data.calendars[0].id;
+    function save() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+      catch (e) { console.warn("저장 실패", e); showToast("브라우저 저장 공간을 확인해 주세요."); }
+      render();
+    }
+    function showToast(message) {
+      const node = $("#toast"); node.textContent = message; node.hidden = false;
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => node.hidden = true, 2500);
+    }
+    const getCal = (id) => data.calendars.find((item) => item.id === id);
+    const getCat = (id) => data.categories.find((item) => item.id === id);
+    const shownEvents = (date) => data.events.filter((item) => item.date === date && !data.hiddenCalendarIds.includes(item.calendarId))
+      .sort((a, b) => (a.time || "00:00").localeCompare(b.time || "00:00") || a.title.localeCompare(b.title, "ko"));
+    const eventColor = (event) => color(getCat(event.categoryId)?.color || getCal(event.calendarId)?.color);
 
-    renderCalendar();
+    function renderSidebar() {
+      $("#calendarList").innerHTML = data.calendars.map((cal) => {
+        const selected = cal.id === activeCalendarId;
+        const hidden = data.hiddenCalendarIds.includes(cal.id);
+        const count = data.events.filter((ev) => ev.calendarId === cal.id).length;
+        return `<div class="side-item ${selected ? "active" : ""}">
+          <button class="side-item-main" data-action="select-calendar" data-id="${html(cal.id)}" aria-label="${html(cal.name)} 캘린더 선택">
+            <span class="color-dot" style="--dot:${color(cal.color)};opacity:${hidden ? .3 : 1}"></span><span>${html(cal.name)}</span><span class="side-count">${count}</span>
+          </button>
+          <button class="side-action" data-action="toggle-calendar" data-id="${html(cal.id)}" title="${hidden ? "캘린더 표시" : "캘린더 숨기기"}" aria-label="${hidden ? "캘린더 표시" : "캘린더 숨기기"}">${icon(hidden ? "eye-off" : "eye")}</button>
+          <button class="side-action" data-action="edit-calendar" data-id="${html(cal.id)}" title="캘린더 수정" aria-label="캘린더 수정">${icon("pencil")}</button>
+        </div>`;
+      }).join("");
+      const current = getCal(activeCalendarId);
+      $("#categoryHeading").textContent = `${current?.name || "캘린더"} · 카테고리`;
+      const cats = data.categories.filter((item) => item.calendarId === activeCalendarId);
+      $("#categoryList").innerHTML = cats.length ? cats.map((cat) => `<div class="side-item">
+        <div class="side-item-main" style="cursor:default"><span class="color-dot" style="--dot:${color(cat.color)}"></span><span>${html(cat.name)}</span></div>
+        <button class="side-action" data-action="edit-category" data-id="${html(cat.id)}" title="카테고리 수정" aria-label="카테고리 수정">${icon("pencil")}</button>
+      </div>`).join("") : `<p style="font-size:12px;color:#9ba0ae;padding:4px 10px">+ 버튼으로 카테고리를 만드세요.</p>`;
+    }
+    function renderMonth() {
+      $("#monthTitle").textContent = `${viewMonth.getFullYear()}년 ${viewMonth.getMonth() + 1}월`;
+      const firstDay = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1).getDay();
+      const todayString = dateKey(new Date());
+      const cells = Array.from({ length: 42 }, (_, index) => {
+        const d = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), index + 1 - firstDay);
+        const key = dateKey(d);
+        const outside = d.getMonth() !== viewMonth.getMonth();
+        const events = shownEvents(key);
+        const eventTags = events.slice(0, 2).map((event) => `<button type="button" class="event-chip" style="--event-color:${eventColor(event)}" data-action="edit-event" data-id="${html(event.id)}" title="${html(event.title)}">
+          <span class="event-dot"></span><span class="event-label">${html(event.title)}</span></button>`).join("");
+        return `<div class="day ${outside ? "outside" : ""} ${key === selectedDate ? "selected" : ""} ${key === todayString ? "today" : ""}" data-action="select-day" data-date="${key}" role="button" tabindex="0" aria-label="${key}, 일정 ${events.length}개">
+          <span class="day-num">${d.getDate()}</span><div class="day-events">${eventTags}${events.length > 2 ? `<span class="day-more">+${events.length - 2}개</span>` : ""}</div>
+        </div>`;
+      });
+      $("#monthGrid").innerHTML = cells.join("");
+    }
+    function renderAgenda() {
+      const date = parseDate(selectedDate);
+      $("#selectedDateTitle").textContent = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", weekday: "long" }).format(date);
+      const events = shownEvents(selectedDate);
+      $("#selectedDateCount").textContent = `등록된 일정 ${events.length}개`;
+      $("#agendaList").innerHTML = events.length ? events.map((event) => {
+        const cal = getCal(event.calendarId);
+        const cat = getCat(event.categoryId);
+        const accent = eventColor(event);
+        return `<article class="agenda-event" style="--event-color:${accent}">
+          <div class="agenda-event-top"><h3>${html(event.title)}</h3><div class="agenda-tools">
+            <button class="mini-btn" data-action="edit-event" data-id="${html(event.id)}" aria-label="일정 수정" title="수정">${icon("pencil")}</button>
+            <button class="mini-btn" data-action="delete-event" data-id="${html(event.id)}" aria-label="일정 삭제" title="삭제">${icon("trash")}</button>
+          </div></div>
+          <div class="agenda-meta"><span>${icon("clock")} ${html(event.time || "종일")}</span><span>${html(cal?.name || "캘린더")}</span>${cat ? `<span class="pill" style="--event-color:${accent}">${html(cat.name)}</span>` : ""}</div>
+          ${event.description ? `<p class="agenda-note">${html(event.description)}</p>` : ""}
+        </article>`;
+      }).join("") : `<div class="empty"><div class="empty-icon">${icon("calendar")}</div><strong>아직 일정이 없어요</strong><p>이 날짜에 새로운 일정을<br>추가해 보세요.</p></div>`;
+    }
+    function render() { renderSidebar(); renderMonth(); renderAgenda(); }
+    function changeMonth(delta) {
+      viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1);
+      selectedDate = dateKey(viewMonth);
+      render();
+    }
+    function selectDate(key) {
+      selectedDate = key;
+      const d = parseDate(key);
+      viewMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+      render();
+    }
+    function closeMenu() { $("#sidebar").classList.remove("open"); $("#sidebarBackdrop").hidden = true; }
+    function closeModal() { $("#modalOverlay").hidden = true; $("#modal").innerHTML = ""; }
+    const option = (value, title, selected) => `<option value="${html(value)}" ${selected ? "selected" : ""}>${html(title)}</option>`;
+    function modalFrame(title, fields, mode, id) {
+      return `<div class="modal-header"><h2>${html(title)}</h2><button type="button" class="mini-btn" data-action="close-modal" aria-label="닫기">${icon("x")}</button></div>
+        <form id="editorForm" data-mode="${mode}" data-id="${html(id || "")}">${fields}
+        <div class="modal-footer">${id ? `<button type="button" class="danger-btn" data-action="delete-${mode}" data-id="${html(id)}">삭제</button>` : ""}
+          <button type="button" class="ghost-btn" data-action="close-modal">취소</button><button type="submit" class="primary-btn">${id ? "변경 저장" : "만들기"}</button>
+        </div></form>`;
+    }
+    function categoryOptions(calendarId, selectedId = "") {
+      return option("", "카테고리 없음", !selectedId) + data.categories.filter((cat) => cat.calendarId === calendarId)
+        .map((cat) => option(cat.id, cat.name, cat.id === selectedId)).join("");
+    }
+    function openEditor(mode, id = "") {
+      closeMenu();
+      let fields = "", title = "";
+      if (mode === "event") {
+        const event = data.events.find((ev) => ev.id === id);
+        const calendarId = event?.calendarId || activeCalendarId;
+        title = event ? "일정 수정" : "새 일정 추가";
+        fields = `<div class="field"><label for="eventTitle">일정 제목 *</label><input id="eventTitle" name="title" maxlength="80" required placeholder="예: 프로젝트 회의" value="${html(event?.title || "")}"></div>
+          <div class="field-row"><div class="field"><label for="eventDate">날짜 *</label><input id="eventDate" name="date" type="date" required value="${html(event?.date || selectedDate)}"></div>
+          <div class="field"><label for="eventTime">시간 (선택)</label><input id="eventTime" name="time" type="time" value="${html(event?.time || "")}"></div></div>
+          <div class="field-row"><div class="field"><label for="eventCalendar">캘린더 *</label><select id="eventCalendar" name="calendarId">${data.calendars.map((cal) => option(cal.id, cal.name, cal.id === calendarId)).join("")}</select></div>
+          <div class="field"><label for="eventCategory">카테고리</label><select id="eventCategory" name="categoryId">${categoryOptions(calendarId, event?.categoryId)}</select></div></div>
+          <div class="field"><label for="eventDescription">메모 (선택)</label><textarea id="eventDescription" name="description" maxlength="1000" placeholder="기억할 내용을 적어주세요">${html(event?.description || "")}</textarea></div>`;
+      } else if (mode === "calendar") {
+        const cal = getCal(id);
+        title = cal ? "캘린더 수정" : "새 캘린더 만들기";
+        fields = `<div class="field"><label for="objectName">캘린더 이름 *</label><input id="objectName" name="name" maxlength="30" required placeholder="예: 학교, 동아리" value="${html(cal?.name || "")}"></div>
+          <div class="field"><label for="objectColor">대표 색상</label><input id="objectColor" name="color" type="color" value="${color(cal?.color || COLORS[data.calendars.length % COLORS.length])}"></div>`;
+      } else if (mode === "category") {
+        const cat = getCat(id);
+        const cal = getCal(cat?.calendarId || activeCalendarId);
+        title = cat ? "카테고리 수정" : "새 카테고리 만들기";
+        fields = `<div class="field"><label>소속 캘린더</label><input value="${html(cal?.name || "")}" disabled></div>
+          <div class="field"><label for="objectName">카테고리 이름 *</label><input id="objectName" name="name" maxlength="30" required placeholder="예: 시험, 약속, 회의" value="${html(cat?.name || "")}"></div>
+          <div class="field"><label for="objectColor">표시 색상</label><input id="objectColor" name="color" type="color" value="${color(cat?.color || COLORS[data.categories.length % COLORS.length])}"></div>`;
+      }
+      $("#modal").innerHTML = modalFrame(title, fields, mode, id);
+      $("#modalOverlay").hidden = false;
+      $("#modal input:not([type=color]):not([type=date]):not([type=time]):not([disabled])")?.focus();
+      if (mode === "event") {
+        $("#eventCalendar").addEventListener("change", (e) => { $("#eventCategory").innerHTML = categoryOptions(e.target.value); });
+      }
+      $("#editorForm").addEventListener("submit", saveEditor);
+    }
+    function saveEditor(e) {
+      e.preventDefault();
+      const form = e.currentTarget, mode = form.dataset.mode, id = form.dataset.id;
+      const values = Object.fromEntries(new FormData(form).entries());
+      if (mode === "event") {
+        const title = values.title.trim();
+        if (!title || !getCal(values.calendarId)) return;
+        const entry = { id: id || uid(), title, date: values.date, time: values.time, calendarId: values.calendarId,
+          categoryId: getCat(values.categoryId)?.calendarId === values.calendarId ? values.categoryId : "", description: values.description.trim() };
+        if (id) data.events = data.events.map((item) => item.id === id ? entry : item);
+        else data.events.push(entry);
+        selectDate(entry.date);
+      } else if (mode === "calendar") {
+        const name = values.name.trim(); if (!name) return;
+        if (data.calendars.some((cal) => cal.name === name && cal.id !== id)) return showToast("이미 같은 이름의 캘린더가 있어요.");
+        if (id) data.calendars = data.calendars.map((cal) => cal.id === id ? { ...cal, name, color: color(values.color) } : cal);
+        else { const newId = uid(); data.calendars.push({ id: newId, name, color: color(values.color) }); activeCalendarId = newId; }
+      } else if (mode === "category") {
+        const existing = getCat(id);
+        const calendarId = existing?.calendarId || activeCalendarId;
+        const name = values.name.trim(); if (!name) return;
+        if (data.categories.some((cat) => cat.calendarId === calendarId && cat.name === name && cat.id !== id)) return showToast("이미 같은 이름의 카테고리가 있어요.");
+        if (id) data.categories = data.categories.map((cat) => cat.id === id ? { ...cat, name, color: color(values.color) } : cat);
+        else data.categories.push({ id: uid(), calendarId, name, color: color(values.color) });
+      }
+      closeModal(); save(); showToast(id ? "변경사항을 저장했어요." : "새 항목을 만들었어요.");
+    }
+    function deleteItem(mode, id) {
+      if (mode === "event") {
+        const item = data.events.find((ev) => ev.id === id);
+        if (!item || !confirm(`'${item.title}' 일정을 삭제할까요?`)) return;
+        data.events = data.events.filter((ev) => ev.id !== id);
+      } else if (mode === "category") {
+        const item = getCat(id);
+        if (!item || !confirm(`'${item.name}' 카테고리를 삭제할까요?\n기존 일정은 유지되지만 카테고리 지정은 해제됩니다.`)) return;
+        data.categories = data.categories.filter((cat) => cat.id !== id);
+        data.events.forEach((ev) => { if (ev.categoryId === id) ev.categoryId = ""; });
+      } else if (mode === "calendar") {
+        const item = getCal(id);
+        if (!item) return;
+        if (data.calendars.length === 1) return showToast("마지막 캘린더는 삭제할 수 없어요.");
+        const count = data.events.filter((ev) => ev.calendarId === id).length;
+        if (!confirm(`'${item.name}' 캘린더를 삭제할까요?\n포함된 일정 ${count}개와 카테고리도 모두 삭제됩니다.`)) return;
+        data.calendars = data.calendars.filter((cal) => cal.id !== id);
+        data.categories = data.categories.filter((cat) => cat.calendarId !== id);
+        data.events = data.events.filter((ev) => ev.calendarId !== id);
+        data.hiddenCalendarIds = data.hiddenCalendarIds.filter((key) => key !== id);
+        if (activeCalendarId === id) activeCalendarId = data.calendars[0].id;
+      }
+      closeModal(); save(); showToast("삭제했어요.");
+    }
+    document.addEventListener("click", (e) => {
+      const target = e.target.closest("[data-action]");
+      if (!target) return;
+      const { action, id, date } = target.dataset;
+      if (action === "select-day") selectDate(date);
+      else if (action === "select-calendar") { activeCalendarId = id; renderSidebar(); closeMenu(); }
+      else if (action === "toggle-calendar") {
+        data.hiddenCalendarIds = data.hiddenCalendarIds.includes(id) ? data.hiddenCalendarIds.filter((key) => key !== id) : [...data.hiddenCalendarIds, id]; save();
+      } else if (action.startsWith("edit-")) openEditor(action.slice(5), id);
+      else if (action.startsWith("delete-")) deleteItem(action.slice(7), id);
+      else if (action === "close-modal") closeModal();
+    });
+    $("#monthGrid").addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.matches('[data-action="select-day"]')) { e.preventDefault(); selectDate(e.target.dataset.date); }
+    });
+    ["#addEventSidebar", "#addEventTop", "#addEventDay"].forEach((s) => $(s).addEventListener("click", () => openEditor("event")));
+    $("#addCalendarBtn").addEventListener("click", () => openEditor("calendar"));
+    $("#addCategoryBtn").addEventListener("click", () => openEditor("category"));
+    ["#prevMonthBtn", "#calendarPrev"].forEach((s) => $(s).addEventListener("click", () => changeMonth(-1)));
+    ["#nextMonthBtn", "#calendarNext"].forEach((s) => $(s).addEventListener("click", () => changeMonth(1)));
+    $("#todayBtn").addEventListener("click", () => selectDate(dateKey(new Date())));
+    $("#menuBtn").addEventListener("click", () => { $("#sidebar").classList.add("open"); $("#sidebarBackdrop").hidden = false; });
+    $("#sidebarBackdrop").addEventListener("click", closeMenu);
+    $("#modalOverlay").addEventListener("click", (e) => { if (e.target === $("#modalOverlay")) closeModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); closeMenu(); } });
+    render();
   </script>
 </body>
 </html>
