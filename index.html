@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f6f7fb" />
   <title>S-Calender | 나만의 일정 관리</title>
-  <!-- S-Calender v1.2: 모바일 일정 입력 UX 개선 -->
+  <!-- S-Calender v1.3: 시작/종료 시간 및 다른 달 일요일 색상 개선 -->
   <style>
     :root {
       --bg: #f6f7fb; --surface: #fff; --text: #202337; --muted: #8b90a2;
@@ -81,6 +81,8 @@
     .day-num { width: 25px; height: 25px; display: grid; place-items: center; color: #53596b; font-size: 12px; font-weight: 750; border-radius: 50%; }
     .day.today .day-num { background: var(--primary); color: white; }
     .day:nth-child(7n + 1):not(.today) .day-num { color: #e47f93; }
+    /* 표시 중인 달 밖의 일요일은 정상 일요일보다 훨씬 연하게 표시합니다. */
+    .day.outside:nth-child(7n + 1):not(.today) .day-num { color: #ecc9d1; }
     .day-events { display: grid; gap: 4px; align-content: start; width: 100%; }
     .event-chip { min-width: 0; display: flex; align-items: center; gap: 5px; background: color-mix(in srgb, var(--event-color), white 89%); border: 0; color: #4c5061; font-size: 10.5px; font-weight: 650; border-radius: 5px; padding: 5px 6px; text-align: left; overflow: hidden; }
     .event-chip:hover { background: color-mix(in srgb, var(--event-color), white 77%); }
@@ -330,7 +332,14 @@
     // v1 저장 데이터(date/time)도 읽을 수 있게 호환 처리합니다.
     const eventStart = (event) => event.startDate || event.date;
     const eventEnd = (event) => event.endDate || event.startDate || event.date;
-    const isAllDay = (event) => event.allDay === undefined ? !event.time : event.allDay;
+    const eventStartTime = (event) => event.startTime || event.time || "";
+    const eventEndTime = (event) => event.endTime || "";
+    const isAllDay = (event) => event.allDay === undefined ? !eventStartTime(event) : event.allDay;
+    const eventTimeLabel = (event) => {
+      if (isAllDay(event)) return "하루 종일";
+      const start = eventStartTime(event), end = eventEndTime(event);
+      return start && end ? `${start} ~ ${end}` : start || "시간 미설정";
+    };
     const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && dateKey(parseDate(value)) === value;
     const briefDate = (key) => { const d = parseDate(key); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
     function rangeLabel(event) {
@@ -343,7 +352,7 @@
       const start = eventStart(item), end = eventEnd(item);
       return start && end && start <= date && date <= end && !data.hiddenCalendarIds.includes(item.calendarId);
     }).sort((a, b) => Number(isAllDay(b)) - Number(isAllDay(a))
-      || (a.time || "00:00").localeCompare(b.time || "00:00") || a.title.localeCompare(b.title, "ko"));
+      || (eventStartTime(a) || "00:00").localeCompare(eventStartTime(b) || "00:00") || a.title.localeCompare(b.title, "ko"));
     const eventColor = (event) => color(getCat(event.categoryId)?.color || getCal(event.calendarId)?.color);
 
     function renderSidebar() {
@@ -401,7 +410,7 @@
             <button class="mini-btn" data-action="edit-event" data-id="${html(event.id)}" aria-label="일정 수정" title="수정">${icon("pencil")}</button>
             <button class="mini-btn" data-action="delete-event" data-id="${html(event.id)}" aria-label="일정 삭제" title="삭제">${icon("trash")}</button>
           </div></div>
-          <div class="agenda-meta"><span>${icon("clock")} ${isAllDay(event) ? "하루 종일" : html(event.time || "시간 미설정")}</span>
+          <div class="agenda-meta"><span>${icon("clock")} ${html(eventTimeLabel(event))}</span>
           ${eventStart(event) !== eventEnd(event) ? `<span>${icon("calendar")} ${html(rangeLabel(event))}</span>` : ""}
           <span>${html(cal?.name || "캘린더")}</span>${cat ? `<span class="pill" style="--event-color:${accent}">${html(cat.name)}</span>` : ""}</div>
           ${event.description ? `<p class="agenda-note">${html(event.description)}</p>` : ""}
@@ -447,7 +456,13 @@
             <div class="field"><label for="eventEndDate">종료일 *</label><input id="eventEndDate" name="endDate" type="date" required min="${html(event ? eventStart(event) : selectedDate)}" value="${html(event ? eventEnd(event) : selectedDate)}"></div>
           </div>
           <div class="field"><label class="all-day-row" for="eventAllDay"><span><strong>하루 종일</strong><small>시간을 지정하지 않고 날짜 전체에 표시해요.</small></span><input id="eventAllDay" name="allDay" type="checkbox" ${event && isAllDay(event) ? "checked" : ""}></label></div>
-          <div class="field" id="eventTimeField" ${event && isAllDay(event) ? "hidden" : ""}><label for="eventTime">시작 시간 *</label><input id="eventTime" name="time" type="time" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(event?.time || "09:00")}"><p class="field-hint">시간 지정 일정도 시작일과 종료일 사이 모든 날짜에 표시돼요.</p></div>
+          <div id="eventTimeField" ${event && isAllDay(event) ? "hidden" : ""}>
+            <div class="field-row">
+              <div class="field"><label for="eventStartTime">시작시간 *</label><input id="eventStartTime" name="startTime" type="time" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(event ? eventStartTime(event) || "09:00" : "09:00")}"></div>
+              <div class="field"><label for="eventEndTime">종료시간 *</label><input id="eventEndTime" name="endTime" type="time" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(event ? eventEndTime(event) : "10:00")}"></div>
+            </div>
+            <p class="field-hint" style="margin:-5px 1px 10px">일정의 시작일·시간부터 종료일·시간까지 설정해요.</p>
+          </div>
           <div class="field-row"><div class="field"><label for="eventCalendar">캘린더 *</label><select id="eventCalendar" name="calendarId">${data.calendars.map((cal) => option(cal.id, cal.name, cal.id === calendarId)).join("")}</select></div>
           <div class="field"><label for="eventCategory">카테고리</label><select id="eventCategory" name="categoryId">${categoryOptions(calendarId, event?.categoryId)}</select></div></div>
           <div class="field"><label for="eventDescription">메모 (선택)</label><textarea id="eventDescription" name="description" maxlength="1000" placeholder="기억할 내용을 적어주세요">${html(event?.description || "")}</textarea></div>`;
@@ -470,15 +485,17 @@
       $("#modal").focus({ preventScroll: true });
       if (mode === "event") {
         $("#eventCalendar").addEventListener("change", (e) => { $("#eventCategory").innerHTML = categoryOptions(e.target.value); });
-        const start = $("#eventStartDate"), end = $("#eventEndDate"), allDay = $("#eventAllDay"), time = $("#eventTime");
+        const start = $("#eventStartDate"), end = $("#eventEndDate"), allDay = $("#eventAllDay"), startTime = $("#eventStartTime"), endTime = $("#eventEndTime");
         start.addEventListener("change", () => {
           end.min = start.value;
           if (end.value < start.value) end.value = start.value;
         });
         const toggleTime = () => {
           $("#eventTimeField").hidden = allDay.checked;
-          time.disabled = allDay.checked;
-          time.required = !allDay.checked;
+          for (const field of [startTime, endTime]) {
+            field.disabled = allDay.checked;
+            field.required = !allDay.checked;
+          }
         };
         allDay.addEventListener("change", toggleTime);
         toggleTime();
@@ -497,9 +514,14 @@
           return showToast("종료일은 시작일과 같거나 이후여야 해요.");
         }
         const allDay = values.allDay === "on";
-        if (!allDay && !values.time) return showToast("시작 시간을 선택해 주세요.");
+        if (!allDay && (!values.startTime || !values.endTime)) return showToast("시작시간과 종료시간을 선택해 주세요.");
+        if (!allDay && startDate === endDate && values.endTime <= values.startTime) {
+          return showToast("같은 날짜에서는 종료시간이 시작시간보다 늦어야 해요.");
+        }
+        const startTime = allDay ? "" : values.startTime;
+        const endTime = allDay ? "" : values.endTime;
         const entry = { id: id || uid(), title, date: startDate, startDate, endDate,
-          allDay, time: allDay ? "" : values.time, calendarId: values.calendarId,
+          allDay, startTime, endTime, time: startTime, calendarId: values.calendarId,
           categoryId: getCat(values.categoryId)?.calendarId === values.calendarId ? values.categoryId : "", description: values.description.trim() };
         if (id) data.events = data.events.map((item) => item.id === id ? entry : item);
         else data.events.push(entry);
