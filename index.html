@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f6f7fb" />
   <title>S-Calender | 나만의 일정 관리</title>
+  <!-- S-Calender v1.2: 모바일 일정 입력 UX 개선 -->
   <style>
     :root {
       --bg: #f6f7fb; --surface: #fff; --text: #202337; --muted: #8b90a2;
@@ -121,11 +122,27 @@
     .field input:not([type=color]), .field select, .field textarea { width: 100%; border: 1px solid #dfe2ec; background: #fff; border-radius: 10px; padding: 11px 12px; color: var(--text); outline: none; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: #968af6; }
     .field textarea { min-height: 83px; resize: vertical; }
+    /* iOS Safari의 날짜/시간 컨트롤은 기본 텍스트 정렬이 다를 수 있어 별도 보정합니다. */
+    .field input[type="date"], .field input[type="time"] {
+      min-width: 0; max-width: 100%; text-align: center; text-align-last: center;
+      appearance: auto; -webkit-appearance: none; display: block;
+    }
+    .field input[type="date"]::-webkit-date-and-time-value,
+    .field input[type="time"]::-webkit-date-and-time-value {
+      display: flex; align-items: center; justify-content: center;
+      width: 100%; min-height: 1.2em; text-align: center;
+    }
+    .field input[type="date"]::-webkit-datetime-edit,
+    .field input[type="time"]::-webkit-datetime-edit {
+      display: inline-block; padding: 0; text-align: center;
+    }
+    .field-row > .field { min-width: 0; }
     .field input[type=color] { width: 60px; height: 38px; padding: 3px; border: 1px solid #dfe2ec; background: white; border-radius: 9px; cursor: pointer; }
     .all-day-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; border-radius: 11px; background: #f8f8fd; border: 1px solid var(--line); cursor: pointer; }
     .all-day-row strong { display: block; color: #44495e; font-size: 13px; }
     .all-day-row small { display: block; margin-top: 4px; color: #9398a9; font-size: 11px; }
-    .all-day-row input[type=checkbox] { width: 19px; height: 19px; accent-color: var(--primary); cursor: pointer; flex: none; }
+    .field label.all-day-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
+    .field .all-day-row input[type=checkbox] { width: 19px; height: 19px; min-height: 0; padding: 0; accent-color: var(--primary); cursor: pointer; flex: 0 0 19px; }
     .field-hint { color: #9398a9; font-size: 11px; margin: 6px 1px 0; line-height: 1.5; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
     .modal-footer { display: flex; align-items: center; gap: 9px; justify-content: flex-end; padding-top: 7px; }
@@ -166,8 +183,28 @@
       .event-label { display: none; }
       .day-more { padding-left: 0; font-size: 9px; }
       .calendar-foot { padding: 12px; }
-      .modal { padding: 21px 17px; }
+      /* 작은 화면에서 폼이 너무 길어지지 않도록 모달과 필드를 컴팩트하게 조정 */
+      .modal-overlay { padding: 12px; }
+      .modal { width: min(100%, 400px); max-height: calc(100dvh - 40px); padding: 18px 16px 16px; border-radius: 17px; overscroll-behavior: contain; }
+      .modal-header { margin-bottom: 15px; }
+      .modal-header h2 { font-size: 18px; }
+      .field { margin-bottom: 11px; }
+      .field label { font-size: 11.5px; margin-bottom: 5px; }
+      .field input:not([type=color]), .field select, .field textarea { font-size: 16px; padding: 9px 10px; min-height: 42px; border-radius: 9px; }
+      .field input[type="date"], .field input[type="time"] { padding-left: 4px; padding-right: 4px; }
+      .field-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .all-day-row { padding: 8px 10px; gap: 8px; }
+      .all-day-row strong { font-size: 12px; }
+      .all-day-row small { margin-top: 2px; font-size: 10px; line-height: 1.4; }
+      .field .all-day-row input[type=checkbox] { width: 18px; height: 18px; min-height: 0; flex-basis: 18px; padding: 0; }
+      .field textarea { min-height: 57px; }
+      .field-hint { margin-top: 4px; font-size: 10px; }
+      .modal-footer { gap: 7px; padding-top: 3px; }
+      .modal-footer .ghost-btn, .modal-footer .primary-btn { min-height: 38px; padding: 9px 12px; font-size: 12px; }
+    }
+    @media (max-width: 350px) {
       .field-row { grid-template-columns: 1fr; gap: 0; }
+      .modal { padding: 16px 13px 14px; }
     }
   </style>
 </head>
@@ -237,7 +274,7 @@
       </div>
     </main>
   </div>
-  <div class="modal-overlay" id="modalOverlay" hidden><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+  <div class="modal-overlay" id="modalOverlay" hidden><div class="modal" id="modal" role="dialog" aria-modal="true" tabindex="-1"></div></div>
   <div class="toast" id="toast" role="status" hidden></div>
 
   <script>
@@ -409,8 +446,8 @@
             <div class="field"><label for="eventStartDate">시작일 *</label><input id="eventStartDate" name="startDate" type="date" required value="${html(event ? eventStart(event) : selectedDate)}"></div>
             <div class="field"><label for="eventEndDate">종료일 *</label><input id="eventEndDate" name="endDate" type="date" required min="${html(event ? eventStart(event) : selectedDate)}" value="${html(event ? eventEnd(event) : selectedDate)}"></div>
           </div>
-          <div class="field"><label class="all-day-row" for="eventAllDay"><span><strong>하루 종일</strong><small>시간을 지정하지 않고 날짜 전체에 표시해요.</small></span><input id="eventAllDay" name="allDay" type="checkbox" ${!event || isAllDay(event) ? "checked" : ""}></label></div>
-          <div class="field" id="eventTimeField" ${!event || isAllDay(event) ? "hidden" : ""}><label for="eventTime">시작 시간 *</label><input id="eventTime" name="time" type="time" ${!event || isAllDay(event) ? "disabled" : "required"} value="${html(event?.time || "09:00")}"><p class="field-hint">시간 지정 일정도 시작일과 종료일 사이 모든 날짜에 표시돼요.</p></div>
+          <div class="field"><label class="all-day-row" for="eventAllDay"><span><strong>하루 종일</strong><small>시간을 지정하지 않고 날짜 전체에 표시해요.</small></span><input id="eventAllDay" name="allDay" type="checkbox" ${event && isAllDay(event) ? "checked" : ""}></label></div>
+          <div class="field" id="eventTimeField" ${event && isAllDay(event) ? "hidden" : ""}><label for="eventTime">시작 시간 *</label><input id="eventTime" name="time" type="time" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(event?.time || "09:00")}"><p class="field-hint">시간 지정 일정도 시작일과 종료일 사이 모든 날짜에 표시돼요.</p></div>
           <div class="field-row"><div class="field"><label for="eventCalendar">캘린더 *</label><select id="eventCalendar" name="calendarId">${data.calendars.map((cal) => option(cal.id, cal.name, cal.id === calendarId)).join("")}</select></div>
           <div class="field"><label for="eventCategory">카테고리</label><select id="eventCategory" name="categoryId">${categoryOptions(calendarId, event?.categoryId)}</select></div></div>
           <div class="field"><label for="eventDescription">메모 (선택)</label><textarea id="eventDescription" name="description" maxlength="1000" placeholder="기억할 내용을 적어주세요">${html(event?.description || "")}</textarea></div>`;
@@ -429,7 +466,8 @@
       }
       $("#modal").innerHTML = modalFrame(title, fields, mode, id);
       $("#modalOverlay").hidden = false;
-      $("#modal input:not([type=color]):not([type=date]):not([type=time]):not([disabled])")?.focus();
+      // 텍스트 입력칸에 자동 포커스하지 않습니다. 아이폰에서 모달을 열어도 키보드가 뜨지 않아요.
+      $("#modal").focus({ preventScroll: true });
       if (mode === "event") {
         $("#eventCalendar").addEventListener("change", (e) => { $("#eventCategory").innerHTML = categoryOptions(e.target.value); });
         const start = $("#eventStartDate"), end = $("#eventEndDate"), allDay = $("#eventAllDay"), time = $("#eventTime");
@@ -534,4 +572,3 @@
   </script>
 </body>
 </html>
-
