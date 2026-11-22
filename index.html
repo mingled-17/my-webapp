@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f6f7fb" />
   <title>S-Calender | 나만의 일정 관리</title>
-  <!-- S-Calender v1.3: 시작/종료 시간 및 다른 달 일요일 색상 개선 -->
+  <!-- S-Calender v1.4: 5분 간격, 메뉴 간소화, 캘린더별 보기 연동 -->
   <style>
     :root {
       --bg: #f6f7fb; --surface: #fff; --text: #202337; --muted: #8b90a2;
@@ -30,6 +30,10 @@
     .primary-btn:hover { background: #5e51d6; transform: translateY(-1px); }
     .wide { width: 100%; }
     .side-section { margin-top: 33px; }
+    .sidebar .side-section:first-of-type { margin-top: 0; }
+    .side-item-all .side-item-main { padding-left: 1px; }
+    .scope-mark { width: 11px; height: 11px; display: inline-grid; place-items: center; border: 1.5px solid #9c91ed; border-radius: 4px; color: #7365ed; font-size: 9px; font-weight: 800; }
+    .scope-mark .icon { width: 10px; height: 10px; stroke-width: 2.4; }
     .side-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; margin-bottom: 12px; }
     .side-heading span { font-size: 12px; font-weight: 800; letter-spacing: .1px; color: #656a7f; }
     .mini-btn { border: 0; background: transparent; color: #8990a4; padding: 4px; display: grid; place-items: center; border-radius: 7px; }
@@ -231,7 +235,6 @@
     <div id="sidebarBackdrop" class="sidebar-backdrop" hidden></div>
     <aside id="sidebar" class="sidebar">
       <div class="brand"><div class="brand-mark"><svg class="icon"><use href="#i-calendar"/></svg></div><div><strong>S-Calender</strong><small>My personal space</small></div></div>
-      <button class="primary-btn wide" id="addEventSidebar"><svg class="icon"><use href="#i-plus"/></svg>새 일정 만들기</button>
       <section class="side-section">
         <div class="side-heading"><span>내 캘린더</span><button class="mini-btn" id="addCalendarBtn" title="캘린더 만들기" aria-label="캘린더 만들기"><svg class="icon"><use href="#i-plus"/></svg></button></div>
         <div class="side-list" id="calendarList"></div>
@@ -246,7 +249,7 @@
       <header class="topbar">
         <div class="top-left">
           <button class="ghost-btn nav-btn mobile-menu" id="menuBtn" aria-label="메뉴 열기"><svg class="icon"><use href="#i-menu"/></svg></button>
-          <div><p class="eyebrow">MY WORKSPACE</p><h1>나의 일정 관리</h1><p class="subtext">오늘의 계획을 한눈에, 더 가볍고 간편하게.</p></div>
+          <div><p class="eyebrow">MY WORKSPACE</p><h1>나의 일정 관리</h1><p class="subtext" id="currentCalendarLabel">모든 캘린더의 일정을 보고 있어요.</p></div>
         </div>
         <div class="top-actions">
           <button class="ghost-btn today-btn" id="todayBtn">오늘</button>
@@ -268,10 +271,10 @@
           <div class="agenda-list" id="agendaList"></div>
         </section>
         <section class="panel">
-          <div class="calendar-head"><div><h2 id="monthTitle"></h2><p>날짜를 누르면 해당 날짜의 일정을 볼 수 있어요.</p></div><div class="month-nav"><button class="ghost-btn nav-btn" id="calendarPrev" aria-label="이전 달"><svg class="icon"><use href="#i-left"/></svg></button><button class="ghost-btn nav-btn" id="calendarNext" aria-label="다음 달"><svg class="icon"><use href="#i-right"/></svg></button></div></div>
+          <div class="calendar-head"><div><h2 id="monthTitle"></h2><p id="calendarScopeHint">모든 캘린더의 일정 · 날짜를 눌러 확인할 수 있어요.</p></div><div class="month-nav"><button class="ghost-btn nav-btn" id="calendarPrev" aria-label="이전 달"><svg class="icon"><use href="#i-left"/></svg></button><button class="ghost-btn nav-btn" id="calendarNext" aria-label="다음 달"><svg class="icon"><use href="#i-right"/></svg></button></div></div>
           <div class="weekday-grid"><div class="weekday">일</div><div class="weekday">월</div><div class="weekday">화</div><div class="weekday">수</div><div class="weekday">목</div><div class="weekday">금</div><div class="weekday">토</div></div>
           <div id="monthGrid" class="month-grid"></div>
-          <div class="calendar-foot">캘린더 이름을 누르면 해당 캘린더의 카테고리를 관리할 수 있습니다. 여러 날에 걸친 일정은 해당 날짜 모두에 표시돼요.</div>
+          <div class="calendar-foot">메뉴에서 ‘모든 캘린더’ 또는 원하는 캘린더를 선택해 표시할 일정을 변경할 수 있어요. 여러 날에 걸친 일정도 표시됩니다.</div>
         </section>
       </div>
     </main>
@@ -317,7 +320,8 @@
       return defaults();
     }
     let data = loadData();
-    activeCalendarId = data.calendars[0].id;
+    activeCalendarId = data.selectedCalendarId === "all" || data.calendars.some((cal) => cal.id === data.selectedCalendarId)
+      ? data.selectedCalendarId : "all";
     function save() {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
       catch (e) { console.warn("저장 실패", e); showToast("브라우저 저장 공간을 확인해 주세요."); }
@@ -340,6 +344,14 @@
       const start = eventStartTime(event), end = eventEndTime(event);
       return start && end ? `${start} ~ ${end}` : start || "시간 미설정";
     };
+    const isFiveMinuteTime = (value) => /^([01]\d|2[0-3]):([0-5]\d)$/.test(value || "") && Number(value.slice(3)) % 5 === 0;
+    // 5분 간격이 아니던 이전 버전의 시간을 수정할 때 가까운 5분으로 맞춥니다.
+    const normalizeTime5 = (value) => {
+      if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(value || "")) return value;
+      const [h, m] = value.split(":").map(Number);
+      const total = Math.min(23 * 60 + 55, Math.round((h * 60 + m) / 5) * 5);
+      return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+    };
     const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || "") && dateKey(parseDate(value)) === value;
     const briefDate = (key) => { const d = parseDate(key); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
     function rangeLabel(event) {
@@ -350,18 +362,26 @@
     }
     const shownEvents = (date) => data.events.filter((item) => {
       const start = eventStart(item), end = eventEnd(item);
-      return start && end && start <= date && date <= end && !data.hiddenCalendarIds.includes(item.calendarId);
+      return start && end && start <= date && date <= end
+        && (activeCalendarId === "all" || item.calendarId === activeCalendarId)
+        && !data.hiddenCalendarIds.includes(item.calendarId);
     }).sort((a, b) => Number(isAllDay(b)) - Number(isAllDay(a))
       || (eventStartTime(a) || "00:00").localeCompare(eventStartTime(b) || "00:00") || a.title.localeCompare(b.title, "ko"));
     const eventColor = (event) => color(getCat(event.categoryId)?.color || getCal(event.calendarId)?.color);
 
     function renderSidebar() {
-      $("#calendarList").innerHTML = data.calendars.map((cal) => {
+      const allSelected = activeCalendarId === "all";
+      const allCount = data.events.filter((event) => !data.hiddenCalendarIds.includes(event.calendarId)).length;
+      const allRow = `<div class="side-item side-item-all ${allSelected ? "active" : ""}">
+        <button class="side-item-main" data-action="select-calendar" data-id="all" aria-label="모든 캘린더 보기" aria-pressed="${allSelected}">
+          <span class="scope-mark">${icon("calendar")}</span><span>모든 캘린더</span><span class="side-count">${allCount}</span>
+        </button></div>`;
+      $("#calendarList").innerHTML = allRow + data.calendars.map((cal) => {
         const selected = cal.id === activeCalendarId;
         const hidden = data.hiddenCalendarIds.includes(cal.id);
         const count = data.events.filter((ev) => ev.calendarId === cal.id).length;
         return `<div class="side-item ${selected ? "active" : ""}">
-          <button class="side-item-main" data-action="select-calendar" data-id="${html(cal.id)}" aria-label="${html(cal.name)} 캘린더 선택">
+          <button class="side-item-main" data-action="select-calendar" data-id="${html(cal.id)}" aria-label="${html(cal.name)} 캘린더 보기" aria-pressed="${selected}">
             <span class="color-dot" style="--dot:${color(cal.color)};opacity:${hidden ? .3 : 1}"></span><span>${html(cal.name)}</span><span class="side-count">${count}</span>
           </button>
           <button class="side-action" data-action="toggle-calendar" data-id="${html(cal.id)}" title="${hidden ? "캘린더 표시" : "캘린더 숨기기"}" aria-label="${hidden ? "캘린더 표시" : "캘린더 숨기기"}">${icon(hidden ? "eye-off" : "eye")}</button>
@@ -369,12 +389,19 @@
         </div>`;
       }).join("");
       const current = getCal(activeCalendarId);
-      $("#categoryHeading").textContent = `${current?.name || "캘린더"} · 카테고리`;
+      $("#currentCalendarLabel").textContent = current ? `${current.name} 캘린더의 일정을 보고 있어요.` : "모든 캘린더의 일정을 보고 있어요.";
+      $("#calendarScopeHint").textContent = current ? `${current.name} 일정만 표시 중 · 날짜를 눌러 확인하세요.` : "모든 캘린더의 일정 · 날짜를 눌러 확인하세요.";
+      $("#categoryHeading").textContent = current ? `${current.name} · 카테고리` : "카테고리";
+      $("#addCategoryBtn").disabled = !current;
+      $("#addCategoryBtn").title = current ? `${current.name}에 카테고리 추가` : "카테고리를 만들려면 캘린더를 먼저 선택하세요";
+      $("#addCategoryBtn").style.opacity = current ? "1" : ".4";
       const cats = data.categories.filter((item) => item.calendarId === activeCalendarId);
-      $("#categoryList").innerHTML = cats.length ? cats.map((cat) => `<div class="side-item">
-        <div class="side-item-main" style="cursor:default"><span class="color-dot" style="--dot:${color(cat.color)}"></span><span>${html(cat.name)}</span></div>
-        <button class="side-action" data-action="edit-category" data-id="${html(cat.id)}" title="카테고리 수정" aria-label="카테고리 수정">${icon("pencil")}</button>
-      </div>`).join("") : `<p style="font-size:12px;color:#9ba0ae;padding:4px 10px">+ 버튼으로 카테고리를 만드세요.</p>`;
+      $("#categoryList").innerHTML = !current
+        ? `<p style="font-size:12px;color:#9ba0ae;padding:4px 10px">캘린더를 선택하면 해당 카테고리가 표시돼요.</p>`
+        : cats.length ? cats.map((cat) => `<div class="side-item">
+          <div class="side-item-main" style="cursor:default"><span class="color-dot" style="--dot:${color(cat.color)}"></span><span>${html(cat.name)}</span></div>
+          <button class="side-action" data-action="edit-category" data-id="${html(cat.id)}" title="카테고리 수정" aria-label="카테고리 수정">${icon("pencil")}</button>
+        </div>`).join("") : `<p style="font-size:12px;color:#9ba0ae;padding:4px 10px">+ 버튼으로 카테고리를 만드세요.</p>`;
     }
     function renderMonth() {
       $("#monthTitle").textContent = `${viewMonth.getFullYear()}년 ${viewMonth.getMonth() + 1}월`;
@@ -448,7 +475,7 @@
       let fields = "", title = "";
       if (mode === "event") {
         const event = data.events.find((ev) => ev.id === id);
-        const calendarId = event?.calendarId || activeCalendarId;
+        const calendarId = event?.calendarId || (getCal(activeCalendarId) ? activeCalendarId : data.calendars[0].id);
         title = event ? "일정 수정" : "새 일정 추가";
         fields = `<div class="field"><label for="eventTitle">일정 제목 *</label><input id="eventTitle" name="title" maxlength="80" required placeholder="예: 프로젝트 회의" value="${html(event?.title || "")}"></div>
           <div class="field-row">
@@ -458,10 +485,10 @@
           <div class="field"><label class="all-day-row" for="eventAllDay"><span><strong>하루 종일</strong><small>시간을 지정하지 않고 날짜 전체에 표시해요.</small></span><input id="eventAllDay" name="allDay" type="checkbox" ${event && isAllDay(event) ? "checked" : ""}></label></div>
           <div id="eventTimeField" ${event && isAllDay(event) ? "hidden" : ""}>
             <div class="field-row">
-              <div class="field"><label for="eventStartTime">시작시간 *</label><input id="eventStartTime" name="startTime" type="time" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(event ? eventStartTime(event) || "09:00" : "09:00")}"></div>
-              <div class="field"><label for="eventEndTime">종료시간 *</label><input id="eventEndTime" name="endTime" type="time" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(event ? eventEndTime(event) : "10:00")}"></div>
+              <div class="field"><label for="eventStartTime">시작시간 *</label><input id="eventStartTime" name="startTime" type="time" step="300" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(normalizeTime5(event ? eventStartTime(event) || "09:00" : "09:00"))}"></div>
+              <div class="field"><label for="eventEndTime">종료시간 *</label><input id="eventEndTime" name="endTime" type="time" step="300" ${event && isAllDay(event) ? "disabled" : "required"} value="${html(normalizeTime5(event ? eventEndTime(event) || "10:00" : "10:00"))}"></div>
             </div>
-            <p class="field-hint" style="margin:-5px 1px 10px">일정의 시작일·시간부터 종료일·시간까지 설정해요.</p>
+            <p class="field-hint" style="margin:-5px 1px 10px">시작·종료 시간을 5분 단위로 선택할 수 있어요.</p>
           </div>
           <div class="field-row"><div class="field"><label for="eventCalendar">캘린더 *</label><select id="eventCalendar" name="calendarId">${data.calendars.map((cal) => option(cal.id, cal.name, cal.id === calendarId)).join("")}</select></div>
           <div class="field"><label for="eventCategory">카테고리</label><select id="eventCategory" name="categoryId">${categoryOptions(calendarId, event?.categoryId)}</select></div></div>
@@ -497,6 +524,10 @@
             field.required = !allDay.checked;
           }
         };
+        // 일부 모바일 브라우저에서 분을 직접 입력하더라도 5분 단위로 정리합니다.
+        for (const field of [startTime, endTime]) {
+          field.addEventListener("change", () => { if (field.value) field.value = normalizeTime5(field.value); });
+        }
         allDay.addEventListener("change", toggleTime);
         toggleTime();
       }
@@ -515,6 +546,7 @@
         }
         const allDay = values.allDay === "on";
         if (!allDay && (!values.startTime || !values.endTime)) return showToast("시작시간과 종료시간을 선택해 주세요.");
+        if (!allDay && (!isFiveMinuteTime(values.startTime) || !isFiveMinuteTime(values.endTime))) return showToast("시간은 5분 단위로 선택해 주세요.");
         if (!allDay && startDate === endDate && values.endTime <= values.startTime) {
           return showToast("같은 날짜에서는 종료시간이 시작시간보다 늦어야 해요.");
         }
@@ -531,6 +563,7 @@
         if (data.calendars.some((cal) => cal.name === name && cal.id !== id)) return showToast("이미 같은 이름의 캘린더가 있어요.");
         if (id) data.calendars = data.calendars.map((cal) => cal.id === id ? { ...cal, name, color: color(values.color) } : cal);
         else { const newId = uid(); data.calendars.push({ id: newId, name, color: color(values.color) }); activeCalendarId = newId; }
+        data.selectedCalendarId = activeCalendarId;
       } else if (mode === "category") {
         const existing = getCat(id);
         const calendarId = existing?.calendarId || activeCalendarId;
@@ -561,7 +594,7 @@
         data.categories = data.categories.filter((cat) => cat.calendarId !== id);
         data.events = data.events.filter((ev) => ev.calendarId !== id);
         data.hiddenCalendarIds = data.hiddenCalendarIds.filter((key) => key !== id);
-        if (activeCalendarId === id) activeCalendarId = data.calendars[0].id;
+        if (activeCalendarId === id) { activeCalendarId = "all"; data.selectedCalendarId = "all"; }
       }
       closeModal(); save(); showToast("삭제했어요.");
     }
@@ -570,9 +603,18 @@
       if (!target) return;
       const { action, id, date } = target.dataset;
       if (action === "select-day") selectDate(date);
-      else if (action === "select-calendar") { activeCalendarId = id; renderSidebar(); closeMenu(); }
+      else if (action === "select-calendar") {
+        if (id !== "all" && !getCal(id)) return;
+        activeCalendarId = id;
+        // 숨겨진 캘린더를 직접 선택하면 표시 상태로 바꿉니다.
+        if (id !== "all") data.hiddenCalendarIds = data.hiddenCalendarIds.filter((key) => key !== id);
+        data.selectedCalendarId = id;
+        closeMenu(); save();
+      }
       else if (action === "toggle-calendar") {
-        data.hiddenCalendarIds = data.hiddenCalendarIds.includes(id) ? data.hiddenCalendarIds.filter((key) => key !== id) : [...data.hiddenCalendarIds, id]; save();
+        data.hiddenCalendarIds = data.hiddenCalendarIds.includes(id) ? data.hiddenCalendarIds.filter((key) => key !== id) : [...data.hiddenCalendarIds, id];
+        if (data.hiddenCalendarIds.includes(id) && activeCalendarId === id) { activeCalendarId = "all"; data.selectedCalendarId = "all"; }
+        save();
       } else if (action.startsWith("edit-")) openEditor(action.slice(5), id);
       else if (action.startsWith("delete-")) deleteItem(action.slice(7), id);
       else if (action === "close-modal") closeModal();
@@ -580,7 +622,7 @@
     $("#monthGrid").addEventListener("keydown", (e) => {
       if ((e.key === "Enter" || e.key === " ") && e.target.matches('[data-action="select-day"]')) { e.preventDefault(); selectDate(e.target.dataset.date); }
     });
-    ["#addEventSidebar", "#addEventTop", "#addEventDay"].forEach((s) => $(s).addEventListener("click", () => openEditor("event")));
+    ["#addEventTop", "#addEventDay"].forEach((s) => $(s).addEventListener("click", () => openEditor("event")));
     $("#addCalendarBtn").addEventListener("click", () => openEditor("calendar"));
     $("#addCategoryBtn").addEventListener("click", () => openEditor("category"));
     $("#calendarPrev").addEventListener("click", () => changeMonth(-1));
